@@ -183,7 +183,7 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
         </div>
       </aside>
 
-      <section className="grid grid-rows-[auto_45%_55%] p-4">
+      <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_minmax(0,1.2fr)] p-4">
         <header className="mb-3 flex items-center justify-between gap-2 rounded-md border p-2" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
           <Timer
             onThreeMinutes={() => dispatch({ type: 'SET_HINT_AVAILABLE' })}
@@ -233,7 +233,7 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
           </div>
         ) : null}
 
-        <div className="mb-3 overflow-hidden rounded-md border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+        <div className="mb-3 min-h-0 overflow-hidden rounded-md border" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
           {challenge.previewType === 'react' || challenge.previewType === 'nextjs' ? (
             <SandpackPreview code={state.code} challenge={challenge} />
           ) : (
@@ -244,7 +244,7 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
           )}
         </div>
 
-        <div ref={editorContainerRef} tabIndex={-1} className="overflow-hidden rounded-md border" style={{ borderColor: 'var(--border-2)' }}>
+        <div ref={editorContainerRef} tabIndex={-1} className="min-h-0 overflow-hidden rounded-md border" style={{ borderColor: 'var(--border-2)' }}>
           <ChallengeEditor
             value={state.code}
             onChange={(value) => dispatch({ type: 'SET_CODE', payload: value })}

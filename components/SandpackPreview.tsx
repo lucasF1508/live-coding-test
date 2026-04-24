@@ -22,7 +22,14 @@ const Sandpack = dynamic(
           theme="dark"
           options={{ recompileMode: 'immediate' }}
         >
-          <mod.SandpackPreview style={{ height: '100%', border: '0' }} showOpenInCodeSandbox={false} />
+          <mod.SandpackLayout style={{ height: '100%' }}>
+            <mod.SandpackPreview
+              style={{ height: '100%', border: '0', background: 'var(--bg)' }}
+              showNavigator={false}
+              showRefreshButton
+              showOpenInCodeSandbox={false}
+            />
+          </mod.SandpackLayout>
         </mod.SandpackProvider>
       )
     }

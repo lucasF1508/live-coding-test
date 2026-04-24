@@ -164,3 +164,15 @@ body {
   to   { transform: translateX(0);    opacity: 1; }
 }
 .slide-in-right { animation: slideInRight 0.25s ease forwards; }
+
+/* ── Sandpack polish ─────────────────────────────────── */
+.sp-wrapper,
+.sp-layout,
+.sp-stack,
+.sp-preview-container {
+  height: 100%;
+}
+
+.sp-preview-iframe {
+  background: var(--bg) !important;
+}

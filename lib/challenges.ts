@@ -2569,6 +2569,198 @@ describe('POST /api/posts', () => {
   })
 })`,
   },
+  {
+    id: 'test-jest-debounced-input',
+    title: 'Jest: Debounced Input',
+    category: 'Testing',
+    difficulty: 'medium',
+    estimatedMinutes: 20,
+    tags: ['jest', 'rtl', 'javascript', 'fake timers', 'debounce'],
+    description:
+      'Prueba un input con debounce usando fake timers para evitar waits reales y garantizar tests rápidos.',
+    instructions: [
+      'Verifica que onSearch no se ejecute inmediatamente al tipear',
+      'Verifica que se ejecute tras 300ms de inactividad',
+      'Verifica que múltiples cambios rápidos disparen solo una llamada final',
+      'Usa jest.useFakeTimers y userEvent.setup con advanceTimers',
+    ],
+    previewType: 'test',
+    starterCode: `import { useEffect, useState } from 'react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+function DebouncedInput({ onSearch }) {
+  const [value, setValue] = useState('')
+
+  useEffect(() => {
+    const id = setTimeout(() => onSearch(value), 300)
+    return () => clearTimeout(id)
+  }, [value, onSearch])
+
+  return <input aria-label="search" value={value} onChange={(e) => setValue(e.target.value)} />
+}
+
+describe('DebouncedInput', () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => jest.useRealTimers())
+
+  it('does not call onSearch immediately', async () => {
+    // TODO
+  })
+
+  it('calls onSearch after 300ms idle', async () => {
+    // TODO
+  })
+
+  it('collapses rapid input to final call', async () => {
+    // TODO
+  })
+})`,
+    solution: `import { useEffect, useState } from 'react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+function DebouncedInput({ onSearch }) {
+  const [value, setValue] = useState('')
+
+  useEffect(() => {
+    const id = setTimeout(() => onSearch(value), 300)
+    return () => clearTimeout(id)
+  }, [value, onSearch])
+
+  return <input aria-label="search" value={value} onChange={(e) => setValue(e.target.value)} />
+}
+
+describe('DebouncedInput', () => {
+  beforeEach(() => jest.useFakeTimers())
+  afterEach(() => jest.useRealTimers())
+
+  it('does not call onSearch immediately', async () => {
+    const onSearch = jest.fn()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    render(<DebouncedInput onSearch={onSearch} />)
+    await user.type(screen.getByLabelText('search'), 'react')
+    expect(onSearch).not.toHaveBeenCalled()
+  })
+
+  it('calls onSearch after 300ms idle', async () => {
+    const onSearch = jest.fn()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    render(<DebouncedInput onSearch={onSearch} />)
+    await user.type(screen.getByLabelText('search'), 'next')
+    jest.advanceTimersByTime(300)
+    expect(onSearch).toHaveBeenLastCalledWith('next')
+  })
+
+  it('collapses rapid input to final call', async () => {
+    const onSearch = jest.fn()
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    render(<DebouncedInput onSearch={onSearch} />)
+    await user.type(screen.getByLabelText('search'), 'a')
+    jest.advanceTimersByTime(150)
+    await user.type(screen.getByLabelText('search'), 'bc')
+    jest.advanceTimersByTime(300)
+    expect(onSearch).toHaveBeenCalledTimes(1)
+    expect(onSearch).toHaveBeenLastCalledWith('abc')
+  })
+})`,
+  },
+  {
+    id: 'test-rtl-async-disappearance',
+    title: 'RTL Async Appearance/Disappearance',
+    category: 'Testing',
+    difficulty: 'hard',
+    estimatedMinutes: 26,
+    tags: ['rtl', 'jest', 'javascript', 'async', 'waitFor'],
+    description:
+      'Practica pruebas asíncronas de UI validando aparición y desaparición de elementos con findBy/queryBy/waitFor.',
+    instructions: [
+      'Verifica que se muestre loading al iniciar',
+      'Verifica que luego aparezca el estado success',
+      'Verifica que loading desaparezca',
+      'Agrega caso de error para renderizar mensaje de fallo',
+    ],
+    previewType: 'test',
+    starterCode: `import { useEffect, useState } from 'react'
+import { render, screen, waitFor } from '@testing-library/react'
+
+function AsyncStatus({ shouldFail = false }) {
+  const [status, setStatus] = useState('loading')
+
+  useEffect(() => {
+    const id = setTimeout(() => setStatus(shouldFail ? 'error' : 'success'), 120)
+    return () => clearTimeout(id)
+  }, [shouldFail])
+
+  return (
+    <div>
+      {status === 'loading' && <p>Loading...</p>}
+      {status === 'success' && <p>Done!</p>}
+      {status === 'error' && <p>Something failed</p>}
+    </div>
+  )
+}
+
+describe('AsyncStatus', () => {
+  it('shows loading first', () => {
+    // TODO
+  })
+
+  it('shows success after async transition', async () => {
+    // TODO
+  })
+
+  it('hides loading after completion', async () => {
+    // TODO
+  })
+
+  it('shows error branch', async () => {
+    // TODO
+  })
+})`,
+    solution: `import { useEffect, useState } from 'react'
+import { render, screen, waitFor } from '@testing-library/react'
+
+function AsyncStatus({ shouldFail = false }) {
+  const [status, setStatus] = useState('loading')
+
+  useEffect(() => {
+    const id = setTimeout(() => setStatus(shouldFail ? 'error' : 'success'), 120)
+    return () => clearTimeout(id)
+  }, [shouldFail])
+
+  return (
+    <div>
+      {status === 'loading' && <p>Loading...</p>}
+      {status === 'success' && <p>Done!</p>}
+      {status === 'error' && <p>Something failed</p>}
+    </div>
+  )
+}
+
+describe('AsyncStatus', () => {
+  it('shows loading first', () => {
+    render(<AsyncStatus />)
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
+  })
+
+  it('shows success after async transition', async () => {
+    render(<AsyncStatus />)
+    expect(await screen.findByText('Done!')).toBeInTheDocument()
+  })
+
+  it('hides loading after completion', async () => {
+    render(<AsyncStatus />)
+    await screen.findByText('Done!')
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+  })
+
+  it('shows error branch', async () => {
+    render(<AsyncStatus shouldFail />)
+    expect(await screen.findByText('Something failed')).toBeInTheDocument()
+  })
+})`,
+  },
 ]
 
 export function getChallengeById(id: string): Challenge | undefined {
