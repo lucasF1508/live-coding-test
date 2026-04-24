@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { Clock3 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { CATEGORIES, challenges } from '@/lib/challenges'
+import { CATEGORIES, challenges, LEVEL_GROUPS, LEVEL_LABELS } from '@/lib/challenges'
 import type { Category, Challenge, Difficulty } from '@/lib/types'
 
 type Progress = Record<
@@ -14,6 +14,8 @@ type Progress = Record<
 type SortMode = 'default' | 'easy' | 'hard' | 'shortest'
 type DifficultyFilter = 'all' | Difficulty
 type StackFilter = 'all' | 'frontend-core' | 'react' | 'nextjs' | 'javascript' | 'jest'
+type LevelFilter = 'all' | 'junior' | 'mid' | 'senior'
+type RoundFilter = 'all' | 'js-utils' | 'ui-coding' | 'testing'
 
 const CATEGORY_VAR: Record<Category, string> = {
   TypeScript: 'var(--cat-ts)',
@@ -50,6 +52,8 @@ export default function HomeDashboard() {
   const [category, setCategory] = useState<Category | 'All'>('All')
   const [difficulty, setDifficulty] = useState<DifficultyFilter>('all')
   const [stack, setStack] = useState<StackFilter>('frontend-core')
+  const [level, setLevel] = useState<LevelFilter>('all')
+  const [round, setRound] = useState<RoundFilter>('all')
   const [sort, setSort] = useState<SortMode>('default')
   const [progress, setProgress] = useState<Progress>({})
 
@@ -67,6 +71,7 @@ export default function HomeDashboard() {
     const list = challenges.filter((challenge) => {
       const matchesCategory = category === 'All' || challenge.category === category
       const matchesDifficulty = difficulty === 'all' || challenge.difficulty === difficulty
+      const matchesLevel = level === 'all' || LEVEL_GROUPS[level].includes(challenge.id)
       const tags = challenge.tags.map((tag) => tag.toLowerCase())
       const matchesStack =
         stack === 'all' ||
@@ -78,10 +83,23 @@ export default function HomeDashboard() {
           challenge.category === 'Testing' &&
           (tags.includes('jest') || challenge.title.toLowerCase().includes('jest')))
 
-      return matchesCategory && matchesDifficulty && matchesStack
+      const matchesRound =
+        round === 'all' ||
+        (round === 'testing' && challenge.category === 'Testing') ||
+        (round === 'ui-coding' &&
+          (challenge.previewType === 'react' || challenge.previewType === 'nextjs') &&
+          challenge.category !== 'Testing') ||
+        (round === 'js-utils' &&
+          (challenge.previewType === 'typescript' ||
+            tags.includes('promise') ||
+            tags.includes('debounce') ||
+            tags.includes('events') ||
+            challenge.category === 'TypeScript'))
+
+      return matchesCategory && matchesDifficulty && matchesStack && matchesLevel && matchesRound
     })
     return sortChallenges(list, sort)
-  }, [category, difficulty, sort, stack])
+  }, [category, difficulty, sort, stack, level, round])
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-8">
@@ -146,6 +164,47 @@ export default function HomeDashboard() {
         <button type="button" className={`btn ${stack === 'all' ? 'btn-accent' : ''}`} onClick={() => setStack('all')}>
           All stacks
         </button>
+      </section>
+
+      <section className="mb-4 rounded-md border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+        <div className="mb-2 text-xs" style={{ color: 'var(--muted)' }}>
+          Tracks de práctica
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" className={`btn ${level === 'all' ? 'btn-accent' : ''}`} onClick={() => setLevel('all')}>
+            Todos
+          </button>
+          {(['junior', 'mid', 'senior'] as const).map((key) => (
+            <button
+              key={key}
+              type="button"
+              className={`btn ${level === key ? 'btn-accent' : ''}`}
+              onClick={() => setLevel(key)}
+            >
+              {LEVEL_LABELS[key]} ({LEVEL_GROUPS[key].length})
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-4 rounded-md border p-3" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+        <div className="mb-2 text-xs" style={{ color: 'var(--muted)' }}>
+          Ronda de entrevista
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" className={`btn ${round === 'all' ? 'btn-accent' : ''}`} onClick={() => setRound('all')}>
+            Todas
+          </button>
+          <button type="button" className={`btn ${round === 'js-utils' ? 'btn-accent' : ''}`} onClick={() => setRound('js-utils')}>
+            JS utilities
+          </button>
+          <button type="button" className={`btn ${round === 'ui-coding' ? 'btn-accent' : ''}`} onClick={() => setRound('ui-coding')}>
+            UI coding
+          </button>
+          <button type="button" className={`btn ${round === 'testing' ? 'btn-accent' : ''}`} onClick={() => setRound('testing')}>
+            Testing
+          </button>
+        </div>
       </section>
 
       <section className="mb-6 flex flex-wrap items-center gap-2">

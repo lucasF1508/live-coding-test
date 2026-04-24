@@ -2761,6 +2761,976 @@ describe('AsyncStatus', () => {
   })
 })`,
   },
+  {
+    id: 'react-controlled-input-race',
+    title: 'Controlled Input Submit Race',
+    category: 'React',
+    difficulty: 'medium',
+    estimatedMinutes: 16,
+    tags: ['react', 'javascript', 'forms', 'state'],
+    description:
+      'Un formulario simple que parece trivial, pero tiene una trampa de doble submit y estado inconsistente.',
+    instructions: [
+      'Evita doble submit cuando ya hay una request en curso',
+      'Limpia el input solo si el submit fue exitoso',
+      'Mantén un estado de error claro y reseteable',
+      'No permitas enviar strings vacíos o con espacios',
+    ],
+    previewType: 'react',
+    starterCode: `import { useState } from 'react'
+
+export default function App() {
+  const [value, setValue] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function fakeSave(text) {
+    await new Promise((r) => setTimeout(r, 400))
+    if (text.toLowerCase().includes('fail')) throw new Error('Server rejected value')
+  }
+
+  async function onSubmit(e) {
+    e.preventDefault()
+    // TODO: fix race + validation
+    setSaving(true)
+    await fakeSave(value)
+    setValue('')
+    setSaving(false)
+  }
+
+  return (
+    <form onSubmit={onSubmit}>
+      <input value={value} onChange={(e) => setValue(e.target.value)} />
+      <button type="submit">{saving ? 'Saving...' : 'Save'}</button>
+      {error ? <p>{error}</p> : null}
+    </form>
+  )
+}`,
+    solution: `import { useState } from 'react'
+
+export default function App() {
+  const [value, setValue] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  async function fakeSave(text) {
+    await new Promise((r) => setTimeout(r, 400))
+    if (text.toLowerCase().includes('fail')) throw new Error('Server rejected value')
+  }
+
+  async function onSubmit(e) {
+    e.preventDefault()
+    if (saving) return
+    const trimmed = value.trim()
+    if (!trimmed) {
+      setError('Value is required')
+      return
+    }
+    setSaving(true)
+    setError('')
+    try {
+      await fakeSave(trimmed)
+      setValue('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit}>
+      <input value={value} onChange={(e) => setValue(e.target.value)} />
+      <button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
+      {error ? <p>{error}</p> : null}
+    </form>
+  )
+}`,
+  },
+  {
+    id: 'react-usememo-sort-trap',
+    title: 'useMemo Sort Trap',
+    category: 'React',
+    difficulty: 'medium',
+    estimatedMinutes: 18,
+    tags: ['react', 'javascript', 'useMemo', 'performance'],
+    description:
+      'Ordenar una lista parece simple, pero hay mutación accidental y renders innecesarios.',
+    instructions: [
+      'Evita mutar el array original al ordenar',
+      'Memoiza correctamente según items y sortDirection',
+      'Mantén estable la UI al re-renderizar',
+    ],
+    previewType: 'react',
+    starterCode: `import { useMemo, useState } from 'react'
+
+const initial = [{ id: 1, name: 'Charlie' }, { id: 2, name: 'Ada' }, { id: 3, name: 'Bob' }]
+
+export default function App() {
+  const [items] = useState(initial)
+  const [dir, setDir] = useState('asc')
+
+  const sorted = useMemo(() => {
+    // TODO: avoid mutating items
+    return items.sort((a, b) => (dir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)))
+  }, [items, dir])
+
+  return (
+    <div>
+      <button onClick={() => setDir((d) => (d === 'asc' ? 'desc' : 'asc'))}>Toggle</button>
+      <ul>{sorted.map((item) => <li key={item.id}>{item.name}</li>)}</ul>
+    </div>
+  )
+}`,
+    solution: `import { useMemo, useState } from 'react'
+
+const initial = [{ id: 1, name: 'Charlie' }, { id: 2, name: 'Ada' }, { id: 3, name: 'Bob' }]
+
+export default function App() {
+  const [items] = useState(initial)
+  const [dir, setDir] = useState('asc')
+
+  const sorted = useMemo(() => {
+    const copy = [...items]
+    copy.sort((a, b) => (dir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)))
+    return copy
+  }, [items, dir])
+
+  return (
+    <div>
+      <button onClick={() => setDir((d) => (d === 'asc' ? 'desc' : 'asc'))}>Toggle</button>
+      <ul>{sorted.map((item) => <li key={item.id}>{item.name}</li>)}</ul>
+    </div>
+  )
+}`,
+  },
+  {
+    id: 'react-effect-cleanup-fetch',
+    title: 'Effect Cleanup on Fetch',
+    category: 'React',
+    difficulty: 'hard',
+    estimatedMinutes: 22,
+    tags: ['react', 'javascript', 'useEffect', 'cleanup'],
+    description:
+      'El challenge típico de data fetching con la trampa de actualizar estado cuando el componente ya desmontó.',
+    instructions: [
+      'Evita setState cuando el componente se desmonta',
+      'Maneja loading/data/error de forma consistente',
+      'No dejes warnings de memory leak',
+    ],
+    previewType: 'react',
+    starterCode: `import { useEffect, useState } from 'react'
+
+export default function App() {
+  const [state, setState] = useState({ loading: true, data: null, error: '' })
+
+  useEffect(() => {
+    fetch('/api/profile')
+      .then((r) => r.json())
+      .then((data) => setState({ loading: false, data, error: '' }))
+      .catch((err) => setState({ loading: false, data: null, error: err.message }))
+  }, [])
+
+  return <pre>{JSON.stringify(state)}</pre>
+}`,
+    solution: `import { useEffect, useState } from 'react'
+
+export default function App() {
+  const [state, setState] = useState({ loading: true, data: null, error: '' })
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/profile')
+      .then((r) => r.json())
+      .then((data) => {
+        if (active) setState({ loading: false, data, error: '' })
+      })
+      .catch((err) => {
+        if (active) setState({ loading: false, data: null, error: err.message })
+      })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  return <pre>{JSON.stringify(state)}</pre>
+}`,
+  },
+  {
+    id: 'react-key-prop-bug',
+    title: 'List Keys and State Mismatch',
+    category: 'React',
+    difficulty: 'medium',
+    estimatedMinutes: 15,
+    tags: ['react', 'javascript', 'lists', 'keys'],
+    description:
+      'Bug clásico en entrevistas: usar index como key y romper el estado local de cada item al reordenar.',
+    instructions: [
+      'Identifica por qué usar index como key rompe la UI',
+      'Cambia a una key estable',
+      'Mantén estado local por item correctamente al eliminar/reordenar',
+    ],
+    previewType: 'react',
+    starterCode: `import { useState } from 'react'
+
+function Row({ item }) {
+  const [checked, setChecked] = useState(false)
+  return <label><input type="checkbox" checked={checked} onChange={() => setChecked((v) => !v)} /> {item.label}</label>
+}
+
+export default function App() {
+  const [items, setItems] = useState([{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }, { id: 'c', label: 'C' }])
+  return (
+    <div>
+      <button onClick={() => setItems((prev) => prev.slice(1))}>Remove first</button>
+      {items.map((item, index) => <Row key={index} item={item} />)}
+    </div>
+  )
+}`,
+    solution: `import { useState } from 'react'
+
+function Row({ item }) {
+  const [checked, setChecked] = useState(false)
+  return <label><input type="checkbox" checked={checked} onChange={() => setChecked((v) => !v)} /> {item.label}</label>
+}
+
+export default function App() {
+  const [items, setItems] = useState([{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }, { id: 'c', label: 'C' }])
+  return (
+    <div>
+      <button onClick={() => setItems((prev) => prev.slice(1))}>Remove first</button>
+      {items.map((item) => <Row key={item.id} item={item} />)}
+    </div>
+  )
+}`,
+  },
+  {
+    id: 'react-accessible-tabs',
+    title: 'Accessible Tabs with Keyboard',
+    category: 'React',
+    difficulty: 'hard',
+    estimatedMinutes: 25,
+    tags: ['react', 'javascript', 'accessibility', 'keyboard'],
+    description:
+      'Implementa tabs accesibles: no solo click, también teclado y atributos ARIA correctos.',
+    instructions: [
+      'Soporta flechas izquierda/derecha para mover foco',
+      'Agrega roles/atributos ARIA en tabs y tabpanels',
+      'Mantén visible solo el panel activo',
+    ],
+    previewType: 'react',
+    starterCode: `import { useState } from 'react'
+
+const tabs = [{ id: 'overview', label: 'Overview' }, { id: 'specs', label: 'Specs' }, { id: 'reviews', label: 'Reviews' }]
+
+export default function App() {
+  const [active, setActive] = useState('overview')
+
+  return (
+    <div>
+      <div>
+        {tabs.map((tab) => (
+          <button key={tab.id} onClick={() => setActive(tab.id)}>{tab.label}</button>
+        ))}
+      </div>
+      <section>{active}</section>
+    </div>
+  )
+}`,
+    solution: `import { useState } from 'react'
+
+const tabs = [{ id: 'overview', label: 'Overview' }, { id: 'specs', label: 'Specs' }, { id: 'reviews', label: 'Reviews' }]
+
+export default function App() {
+  const [active, setActive] = useState('overview')
+  const index = tabs.findIndex((t) => t.id === active)
+
+  function onKeyDown(event) {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return
+    const next = event.key === 'ArrowRight' ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length
+    setActive(tabs[next].id)
+  }
+
+  return (
+    <div>
+      <div role="tablist" aria-label="Product tabs" onKeyDown={onKeyDown}>
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            role="tab"
+            id={\`tab-\${tab.id}\`}
+            aria-selected={active === tab.id}
+            aria-controls={\`panel-\${tab.id}\`}
+            tabIndex={active === tab.id ? 0 : -1}
+            onClick={() => setActive(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      {tabs.map((tab) => (
+        <section
+          key={tab.id}
+          role="tabpanel"
+          id={\`panel-\${tab.id}\`}
+          aria-labelledby={\`tab-\${tab.id}\`}
+          hidden={active !== tab.id}
+        >
+          {tab.id}
+        </section>
+      ))}
+    </div>
+  )
+}`,
+  },
+  {
+    id: 'nextjs-searchparams-sync',
+    title: 'Next.js Search Params Sync',
+    category: 'Next.js',
+    difficulty: 'medium',
+    estimatedMinutes: 18,
+    tags: ['nextjs', 'javascript', 'routing', 'searchparams'],
+    description:
+      'Sincroniza filtros con query params sin romper navegación ni historial.',
+    instructions: [
+      'Lee valor inicial desde searchParams',
+      'Actualiza URL al cambiar filtro sin full reload',
+      'Conserva otros params existentes',
+    ],
+    previewType: 'nextjs',
+    starterCode: `'use client'
+import { useRouter, useSearchParams } from 'next/navigation'
+
+export default function FilterBar() {
+  const router = useRouter()
+  const params = useSearchParams()
+  const status = params.get('status') || 'all'
+
+  function update(next) {
+    // TODO: preserve other params
+    router.push('?status=' + next)
+  }
+
+  return (
+    <div>
+      <button onClick={() => update('all')} disabled={status === 'all'}>All</button>
+      <button onClick={() => update('open')} disabled={status === 'open'}>Open</button>
+      <button onClick={() => update('closed')} disabled={status === 'closed'}>Closed</button>
+    </div>
+  )
+}`,
+    solution: `'use client'
+import { useRouter, useSearchParams } from 'next/navigation'
+
+export default function FilterBar() {
+  const router = useRouter()
+  const params = useSearchParams()
+  const status = params.get('status') || 'all'
+
+  function update(next) {
+    const nextParams = new URLSearchParams(params.toString())
+    nextParams.set('status', next)
+    router.push('?' + nextParams.toString())
+  }
+
+  return (
+    <div>
+      <button onClick={() => update('all')} disabled={status === 'all'}>All</button>
+      <button onClick={() => update('open')} disabled={status === 'open'}>Open</button>
+      <button onClick={() => update('closed')} disabled={status === 'closed'}>Closed</button>
+    </div>
+  )
+}`,
+  },
+  {
+    id: 'nextjs-route-cache-control',
+    title: 'Next.js Route Handler Cache Trap',
+    category: 'Next.js',
+    difficulty: 'hard',
+    estimatedMinutes: 22,
+    tags: ['nextjs', 'route handlers', 'javascript', 'cache'],
+    description:
+      'Route Handler aparentemente correcto pero con headers de cache mal configurados.',
+    instructions: [
+      'Retorna JSON con fecha actual',
+      'Configura no-store para evitar datos stale',
+      'Devuelve status code correcto',
+    ],
+    previewType: 'nextjs',
+    starterCode: `export async function GET() {
+  return Response.json({ now: new Date().toISOString() })
+}`,
+    solution: `export async function GET() {
+  return Response.json(
+    { now: new Date().toISOString() },
+    {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-store, max-age=0',
+      },
+    },
+  )
+}`,
+  },
+  {
+    id: 'test-jest-race-condition',
+    title: 'Jest: Async Race Condition',
+    category: 'Testing',
+    difficulty: 'hard',
+    estimatedMinutes: 24,
+    tags: ['jest', 'javascript', 'async', 'race condition'],
+    description:
+      'Detecta y testea condiciones de carrera en un buscador que dispara requests consecutivas.',
+    instructions: [
+      'Escribe test que demuestre respuesta vieja sobreescribiendo una nueva',
+      'Ajusta implementación con requestId/cancel flag',
+      'Valida que solo se renderice el resultado más reciente',
+    ],
+    previewType: 'test',
+    starterCode: `function createSearch(load) {
+  let value = null
+  return {
+    get value() { return value },
+    async search(query) {
+      const result = await load(query)
+      value = result
+    },
+  }
+}
+
+describe('createSearch', () => {
+  it('keeps latest result only', async () => {
+    // TODO
+  })
+})`,
+    solution: `function createSearch(load) {
+  let value = null
+  let requestId = 0
+  return {
+    get value() { return value },
+    async search(query) {
+      const id = ++requestId
+      const result = await load(query)
+      if (id === requestId) value = result
+    },
+  }
+}
+
+describe('createSearch', () => {
+  it('keeps latest result only', async () => {
+    const load = jest.fn((q) =>
+      new Promise((resolve) => setTimeout(() => resolve(q.toUpperCase()), q === 'old' ? 40 : 10)),
+    )
+    const search = createSearch(load)
+
+    await Promise.all([search.search('old'), search.search('new')])
+    expect(search.value).toBe('NEW')
+  })
+})`,
+  },
+  {
+    id: 'test-rtl-focus-management',
+    title: 'RTL: Focus Management in Modal',
+    category: 'Testing',
+    difficulty: 'medium',
+    estimatedMinutes: 21,
+    tags: ['rtl', 'jest', 'javascript', 'accessibility', 'focus'],
+    description:
+      'Testea foco accesible en modal: foco inicial, cierre con Escape y retorno al trigger.',
+    instructions: [
+      'Verifica foco inicial en botón close al abrir modal',
+      'Verifica cierre con Escape',
+      'Verifica retorno del foco al botón que abrió el modal',
+    ],
+    previewType: 'test',
+    starterCode: `import { useEffect, useRef, useState } from 'react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+function ModalDemo() {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef(null)
+  const closeRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    closeRef.current?.focus()
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        setOpen(false)
+        triggerRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
+  return (
+    <div>
+      <button ref={triggerRef} onClick={() => setOpen(true)}>Open</button>
+      {open ? (
+        <div role="dialog">
+          <button ref={closeRef} onClick={() => setOpen(false)}>Close</button>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+describe('ModalDemo', () => {
+  it('manages focus and escape correctly', async () => {
+    // TODO
+  })
+})`,
+    solution: `import { useEffect, useRef, useState } from 'react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+
+function ModalDemo() {
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef(null)
+  const closeRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    closeRef.current?.focus()
+    function onKey(e) {
+      if (e.key === 'Escape') {
+        setOpen(false)
+        triggerRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
+  return (
+    <div>
+      <button ref={triggerRef} onClick={() => setOpen(true)}>Open</button>
+      {open ? (
+        <div role="dialog">
+          <button ref={closeRef} onClick={() => setOpen(false)}>Close</button>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+describe('ModalDemo', () => {
+  it('manages focus and escape correctly', async () => {
+    const user = userEvent.setup()
+    render(<ModalDemo />)
+    const open = screen.getByRole('button', { name: 'Open' })
+    await user.click(open)
+    const close = screen.getByRole('button', { name: 'Close' })
+    expect(close).toHaveFocus()
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(open).toHaveFocus()
+  })
+})`,
+  },
+  {
+    id: 'test-jest-formatter-edge-cases',
+    title: 'Jest: Formatter Edge Cases',
+    category: 'Testing',
+    difficulty: 'medium',
+    estimatedMinutes: 17,
+    tags: ['jest', 'javascript', 'unit testing', 'edge cases'],
+    description:
+      'Caso simple de unit tests con trampas de null/undefined/whitespace y comportamiento inesperado.',
+    instructions: [
+      'Escribe tests para strings vacíos y null',
+      'Valida trimming y normalización de espacios',
+      'Cubre branch de fallback',
+    ],
+    previewType: 'test',
+    starterCode: `function formatLabel(input) {
+  if (input == null) return 'N/A'
+  const value = String(input)
+  if (!value) return 'N/A'
+  return value.trim().replace(/\\s+/g, ' ')
+}
+
+describe('formatLabel', () => {
+  it('handles null and undefined', () => {
+    // TODO
+  })
+
+  it('normalizes whitespace', () => {
+    // TODO
+  })
+
+  it('returns N/A for empty string', () => {
+    // TODO
+  })
+})`,
+    solution: `function formatLabel(input) {
+  if (input == null) return 'N/A'
+  const value = String(input)
+  if (!value) return 'N/A'
+  const normalized = value.trim().replace(/\\s+/g, ' ')
+  if (!normalized) return 'N/A'
+  return normalized
+}
+
+describe('formatLabel', () => {
+  it('handles null and undefined', () => {
+    expect(formatLabel(null)).toBe('N/A')
+    expect(formatLabel(undefined)).toBe('N/A')
+  })
+
+  it('normalizes whitespace', () => {
+    expect(formatLabel('   hello     world   ')).toBe('hello world')
+  })
+
+  it('returns N/A for empty string', () => {
+    expect(formatLabel('')).toBe('N/A')
+    expect(formatLabel('   ')).toBe('N/A')
+  })
+})`,
+  },
+  {
+    id: 'gfe-counter-warmup',
+    title: 'Counter Warmup',
+    category: 'React',
+    difficulty: 'easy',
+    estimatedMinutes: 10,
+    tags: ['react', 'javascript', 'ui coding', 'state'],
+    description: 'Construye un contador simple, con reset y límite inferior en cero. Parece básico, pero suele fallar el manejo de estados rápidos.',
+    instructions: [
+      'Incrementa y decrementa el contador',
+      'No permitas valores menores a 0',
+      'Agrega botón de reset a 0',
+      'Evita errores por doble click rápido',
+    ],
+    previewType: 'react',
+    starterCode: `import { useState } from 'react'
+
+export default function App() {
+  const [count, setCount] = useState(0)
+  return (
+    <div>
+      <h1>{count}</h1>
+      <button onClick={() => setCount(count - 1)}>-</button>
+      <button onClick={() => setCount(count + 1)}>+</button>
+      <button onClick={() => setCount(0)}>Reset</button>
+    </div>
+  )
+}`,
+    solution: `import { useState } from 'react'
+
+export default function App() {
+  const [count, setCount] = useState(0)
+  return (
+    <div>
+      <h1>{count}</h1>
+      <button onClick={() => setCount((prev) => Math.max(0, prev - 1))}>-</button>
+      <button onClick={() => setCount((prev) => prev + 1)}>+</button>
+      <button onClick={() => setCount(0)}>Reset</button>
+    </div>
+  )
+}`,
+  },
+  {
+    id: 'gfe-todo-list-core',
+    title: 'Todo List Core',
+    category: 'React',
+    difficulty: 'medium',
+    estimatedMinutes: 20,
+    tags: ['react', 'javascript', 'ui coding', 'todos'],
+    description: 'Implementa un Todo List clásico con alta señal de seniority: ids estables, validación y actualización inmutable.',
+    instructions: [
+      'Agregar tarea nueva',
+      'Eliminar tarea por id',
+      'No permitir strings vacíos',
+      'Usar ids estables (no index como key)',
+    ],
+    previewType: 'react',
+    starterCode: `import { useState } from 'react'
+
+export default function App() {
+  const [text, setText] = useState('')
+  const [items, setItems] = useState([])
+
+  function add() {
+    // TODO
+  }
+
+  function remove(id) {
+    // TODO
+  }
+
+  return (
+    <div>
+      <input value={text} onChange={(e) => setText(e.target.value)} />
+      <button onClick={add}>Add</button>
+      <ul>
+        {items.map((item, index) => (
+          <li key={index}>
+            {item.text} <button onClick={() => remove(item.id)}>x</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}`,
+    solution: `import { useState } from 'react'
+
+export default function App() {
+  const [text, setText] = useState('')
+  const [items, setItems] = useState([])
+
+  function add() {
+    const value = text.trim()
+    if (!value) return
+    setItems((prev) => [...prev, { id: crypto.randomUUID(), text: value }])
+    setText('')
+  }
+
+  function remove(id) {
+    setItems((prev) => prev.filter((item) => item.id !== id))
+  }
+
+  return (
+    <div>
+      <input value={text} onChange={(e) => setText(e.target.value)} />
+      <button onClick={add}>Add</button>
+      <ul>
+        {items.map((item) => (
+          <li key={item.id}>
+            {item.text} <button onClick={() => remove(item.id)}>x</button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}`,
+  },
+  {
+    id: 'gfe-debounce-cancel-flush',
+    title: 'Debounce with cancel/flush',
+    category: 'TypeScript',
+    difficulty: 'hard',
+    estimatedMinutes: 26,
+    tags: ['javascript', 'typescript', 'debounce', 'async'],
+    description: 'Implementa un debounce robusto con métodos cancel y flush, inspirado en entrevistas de utilidades JS.',
+    instructions: [
+      'Implementa debounce(fn, wait)',
+      'Agrega método cancel()',
+      'Agrega método flush()',
+      'Mantén último this/args para invocación final',
+    ],
+    previewType: 'typescript',
+    starterCode: `type AnyFn = (...args: any[]) => any
+
+interface Debounced<T extends AnyFn> {
+  (...args: Parameters<T>): void
+  cancel: () => void
+  flush: () => ReturnType<T> | undefined
+}
+
+export function debounce<T extends AnyFn>(fn: T, wait: number): Debounced<T> {
+  // TODO
+  throw new Error('Not implemented')
+}`,
+    solution: `type AnyFn = (...args: any[]) => any
+
+interface Debounced<T extends AnyFn> {
+  (...args: Parameters<T>): void
+  cancel: () => void
+  flush: () => ReturnType<T> | undefined
+}
+
+export function debounce<T extends AnyFn>(fn: T, wait: number): Debounced<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  let lastArgs: Parameters<T> | null = null
+  let lastThis: unknown = null
+
+  const debounced = function (this: unknown, ...args: Parameters<T>) {
+    lastArgs = args
+    lastThis = this
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => {
+      fn.apply(lastThis, lastArgs as Parameters<T>)
+      timer = null
+      lastArgs = null
+      lastThis = null
+    }, wait)
+  } as Debounced<T>
+
+  debounced.cancel = () => {
+    if (timer) clearTimeout(timer)
+    timer = null
+    lastArgs = null
+    lastThis = null
+  }
+
+  debounced.flush = () => {
+    if (!timer || !lastArgs) return undefined
+    clearTimeout(timer)
+    timer = null
+    const result = fn.apply(lastThis, lastArgs)
+    lastArgs = null
+    lastThis = null
+    return result
+  }
+
+  return debounced
+}`,
+  },
+  {
+    id: 'gfe-tabs-aria',
+    title: 'Tabs ARIA Semiaccesibles',
+    category: 'React',
+    difficulty: 'medium',
+    estimatedMinutes: 22,
+    tags: ['react', 'javascript', 'accessibility', 'tabs'],
+    description: 'Construye tabs con ARIA correcto y navegación básica; desafío clásico de UI coding con trampa de foco/roles.',
+    instructions: [
+      'Implementa roles tablist/tab/tabpanel',
+      'Sincroniza aria-selected y tabIndex',
+      'Oculta paneles inactivos',
+      'Mantén foco en tab activo al click',
+    ],
+    previewType: 'react',
+    starterCode: `import { useState } from 'react'
+
+const tabs = ['First', 'Second', 'Third']
+
+export default function App() {
+  const [active, setActive] = useState(0)
+  return (
+    <div>
+      <div>
+        {tabs.map((tab, i) => <button key={tab} onClick={() => setActive(i)}>{tab}</button>)}
+      </div>
+      <div>{tabs[active]} panel</div>
+    </div>
+  )
+}`,
+    solution: `import { useState } from 'react'
+
+const tabs = ['First', 'Second', 'Third']
+
+export default function App() {
+  const [active, setActive] = useState(0)
+  return (
+    <div>
+      <div role="tablist" aria-label="Demo tabs">
+        {tabs.map((tab, i) => (
+          <button
+            key={tab}
+            role="tab"
+            id={\`tab-\${i}\`}
+            aria-controls={\`panel-\${i}\`}
+            aria-selected={active === i}
+            tabIndex={active === i ? 0 : -1}
+            onClick={() => setActive(i)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+      {tabs.map((tab, i) => (
+        <div
+          key={tab}
+          role="tabpanel"
+          id={\`panel-\${i}\`}
+          aria-labelledby={\`tab-\${i}\`}
+          hidden={active !== i}
+        >
+          {tab} panel
+        </div>
+      ))}
+    </div>
+  )
+}`,
+  },
+  {
+    id: 'gfe-promise-all',
+    title: 'Promise.all desde cero',
+    category: 'TypeScript',
+    difficulty: 'medium',
+    estimatedMinutes: 20,
+    tags: ['javascript', 'typescript', 'promises', 'async'],
+    description: 'Implementa Promise.all respetando orden, resolución concurrente y rechazo temprano.',
+    instructions: [
+      'Recibe array de valores/promises',
+      'Resuelve en el orden original',
+      'Rechaza al primer error',
+      'Soporta array vacío',
+    ],
+    previewType: 'typescript',
+    starterCode: `export function myPromiseAll<T>(values: Array<T | Promise<T>>): Promise<T[]> {
+  // TODO
+  return Promise.resolve([])
+}`,
+    solution: `export function myPromiseAll<T>(values: Array<T | Promise<T>>): Promise<T[]> {
+  if (values.length === 0) return Promise.resolve([])
+  return new Promise<T[]>((resolve, reject) => {
+    const results: T[] = new Array(values.length)
+    let completed = 0
+    values.forEach((value, index) => {
+      Promise.resolve(value)
+        .then((resolved) => {
+          results[index] = resolved
+          completed += 1
+          if (completed === values.length) resolve(results)
+        })
+        .catch(reject)
+    })
+  })
+}`,
+  },
+  {
+    id: 'gfe-event-emitter',
+    title: 'Event Emitter básico',
+    category: 'TypeScript',
+    difficulty: 'medium',
+    estimatedMinutes: 21,
+    tags: ['javascript', 'typescript', 'events', 'oop'],
+    description: 'Implementa un EventEmitter con on/off/emit. Trampa común: desuscripción y handlers duplicados.',
+    instructions: [
+      'Implementa on(event, handler)',
+      'Implementa off(event, handler)',
+      'Implementa emit(event, payload)',
+      'No rompas emisión si no hay listeners',
+    ],
+    previewType: 'typescript',
+    starterCode: `type Handler = (payload?: unknown) => void
+
+export class EventEmitter {
+  // TODO
+  on(event: string, handler: Handler): void {}
+  off(event: string, handler: Handler): void {}
+  emit(event: string, payload?: unknown): void {}
+}`,
+    solution: `type Handler = (payload?: unknown) => void
+
+export class EventEmitter {
+  private listeners = new Map<string, Set<Handler>>()
+
+  on(event: string, handler: Handler): void {
+    const bucket = this.listeners.get(event) ?? new Set<Handler>()
+    bucket.add(handler)
+    this.listeners.set(event, bucket)
+  }
+
+  off(event: string, handler: Handler): void {
+    const bucket = this.listeners.get(event)
+    if (!bucket) return
+    bucket.delete(handler)
+    if (bucket.size === 0) this.listeners.delete(event)
+  }
+
+  emit(event: string, payload?: unknown): void {
+    const bucket = this.listeners.get(event)
+    if (!bucket) return
+    for (const handler of bucket) handler(payload)
+  }
+}`,
+  },
 ]
 
 export function getChallengeById(id: string): Challenge | undefined {
@@ -2768,3 +3738,15 @@ export function getChallengeById(id: string): Challenge | undefined {
 }
 
 export const CATEGORIES = [...new Set(challenges.map(c => c.category))] as const
+
+export const LEVEL_GROUPS = {
+  junior: challenges.filter((c) => c.difficulty === 'easy').map((c) => c.id),
+  mid: challenges.filter((c) => c.difficulty === 'medium').map((c) => c.id),
+  senior: challenges.filter((c) => c.difficulty === 'hard').map((c) => c.id),
+} as const
+
+export const LEVEL_LABELS = {
+  junior: 'Junior',
+  mid: 'Mid',
+  senior: 'Senior',
+} as const
