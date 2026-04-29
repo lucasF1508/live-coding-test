@@ -102,10 +102,10 @@ export default function HomeDashboard() {
   }, [category, difficulty, sort, stack, level, round])
 
   return (
-    <main className="mx-auto max-w-7xl px-6 py-8">
+    <main className="mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8">
       <header className="mb-8 space-y-4">
         <div>
-          <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>
+          <h1 className="text-3xl font-bold sm:text-4xl" style={{ fontFamily: 'var(--font-display)', color: 'var(--accent)' }}>
             DevProbe
           </h1>
           <p style={{ color: 'var(--muted)' }}>
@@ -224,7 +224,7 @@ export default function HomeDashboard() {
         <select
           value={sort}
           onChange={(event) => setSort(event.target.value as SortMode)}
-          className="ml-auto rounded-md border px-3 py-1.5"
+          className="w-full rounded-md border px-3 py-1.5 sm:ml-auto sm:w-auto"
           style={{ background: 'var(--surface)', borderColor: 'var(--border-2)', color: 'var(--text)' }}
         >
           <option value="default">Default</option>

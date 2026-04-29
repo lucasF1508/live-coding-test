@@ -125,8 +125,8 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
   }
 
   return (
-    <main className="grid h-screen grid-cols-[38%_62%] gap-0">
-      <aside className="border-r px-6 py-5" style={{ borderColor: 'var(--border)', background: 'var(--bg-2)' }}>
+    <main className="grid min-h-screen grid-cols-1 gap-0 lg:h-screen lg:grid-cols-[38%_62%]">
+      <aside className="border-b px-3 py-4 lg:border-b-0 lg:border-r lg:px-6 lg:py-5" style={{ borderColor: 'var(--border)', background: 'var(--bg-2)' }}>
         <Link href="/" className="mb-4 inline-flex items-center gap-2 text-sm" style={{ color: 'var(--muted)' }}>
           <ArrowLeft size={14} /> Volver
         </Link>
@@ -136,7 +136,7 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
             {challenge.difficulty}
           </span>
         </div>
-        <h1 className="mb-2 text-3xl font-bold" style={{ fontFamily: 'var(--font-display)' }}>{challenge.title}</h1>
+        <h1 className="mb-2 text-2xl font-bold lg:text-3xl" style={{ fontFamily: 'var(--font-display)' }}>{challenge.title}</h1>
         <p className="mb-4 text-sm" style={{ color: 'var(--muted)' }}>{challenge.description}</p>
         <ol className="mb-4 list-decimal space-y-2 pl-5 text-sm">
           {challenge.instructions.map((item) => (
@@ -146,7 +146,7 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
         <div className="mb-5 flex flex-wrap gap-1.5">
           {challenge.tags.map((tag) => <span key={tag} className="tag">{tag}</span>)}
         </div>
-        <div className="mb-6 flex gap-2">
+        <div className="mb-6 flex flex-wrap gap-2">
           <button
             type="button"
             className="btn btn-red"
@@ -166,7 +166,7 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
         {showRevealConfirm ? (
           <div className="mb-4 rounded-md border p-3 text-sm" style={{ borderColor: 'var(--red)', background: 'var(--red-bg)' }}>
             Aun no pasaron 5 minutos. Ver la solucion ahora puede reducir el valor de la practica.
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               <button type="button" className="btn btn-red" onClick={revealSolution}>
                 Ver igual
               </button>
@@ -183,8 +183,8 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
         </div>
       </aside>
 
-      <section className="grid min-h-0 grid-rows-[auto_minmax(0,1fr)_minmax(0,1.2fr)] p-4">
-        <header className="mb-3 flex items-center justify-between gap-2 rounded-md border p-2" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
+      <section className="grid min-h-0 grid-rows-[auto_auto_minmax(220px,1fr)_minmax(260px,1.1fr)] p-3 lg:grid-rows-[auto_minmax(0,1fr)_minmax(0,1.2fr)] lg:p-4">
+        <header className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border p-2" style={{ borderColor: 'var(--border)', background: 'var(--surface)' }}>
           <Timer
             onThreeMinutes={() => dispatch({ type: 'SET_HINT_AVAILABLE' })}
             onTick={(value) => dispatch({ type: 'SET_ELAPSED', payload: value })}
@@ -216,7 +216,7 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
         {showResetBanner ? (
           <div className="mb-2 rounded-md border p-3 text-sm" style={{ borderColor: 'var(--amber)', background: 'var(--amber-bg)' }}>
             Reset to starter code? This will erase your progress.
-            <div className="mt-2 flex gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               <button
                 type="button"
                 className="btn btn-amber"
@@ -255,7 +255,7 @@ export default function ChallengeWorkspace({ challenge }: { challenge: Challenge
         </div>
         {closeNudge ? (
           <div className="mt-2 rounded-md border p-2 text-sm" style={{ borderColor: 'var(--amber)', color: 'var(--amber)' }}>
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <span>Looks like you're close! Want to compare with the solution?</span>
               <button type="button" className="btn btn-amber" onClick={() => dispatch({ type: 'OPEN_COMPARE' })}>
                 Compare

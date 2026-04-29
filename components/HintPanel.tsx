@@ -70,7 +70,7 @@ export default function HintPanel({
     <div className="fixed inset-0 z-30">
       <button type="button" className="absolute inset-0" style={{ background: 'rgba(5,9,15,0.65)' }} onClick={onClose} />
       <aside
-        className="slide-in-right absolute right-0 top-0 h-full w-[380px] border-l p-4"
+        className="slide-in-right absolute right-0 top-0 h-full w-full border-l p-3 sm:w-[380px] sm:p-4"
         style={{ background: 'var(--surface)', borderColor: 'var(--border)' }}
       >
         <div className="mb-4 flex items-center justify-between">

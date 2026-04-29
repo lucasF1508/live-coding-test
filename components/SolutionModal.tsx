@@ -36,9 +36,9 @@ export default function SolutionModal({ challenge, userCode, onClose }: Props) {
         style={{ background: 'rgba(5,9,15,0.65)' }}
         onClick={onClose}
       />
-      <div className="absolute left-1/2 top-1/2 h-[80vh] w-[90vw] -translate-x-1/2 -translate-y-1/2 rounded-lg border p-4" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-2)' }}>
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex gap-2">
+      <div className="absolute left-1/2 top-1/2 h-[90vh] w-[95vw] -translate-x-1/2 -translate-y-1/2 rounded-lg border p-3 sm:h-[80vh] sm:w-[90vw] sm:p-4" style={{ background: 'var(--bg-2)', borderColor: 'var(--border-2)' }}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap gap-2">
             <button type="button" className={`btn ${tab === 'solution' ? 'btn-accent' : ''}`} onClick={() => setTab('solution')}>
               Solution
             </button>
@@ -46,7 +46,7 @@ export default function SolutionModal({ challenge, userCode, onClose }: Props) {
               Compare
             </button>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button type="button" className="btn btn-mint" onClick={copySolution}>
               Copy to clipboard
             </button>
@@ -63,10 +63,10 @@ export default function SolutionModal({ challenge, userCode, onClose }: Props) {
             language={challenge.previewType === 'test' ? 'javascript' : 'typescript'}
             fastTyping
             readOnly
-            height="calc(80vh - 92px)"
+            height="calc(90vh - 132px)"
           />
         ) : (
-          <div className="grid h-[calc(80vh-92px)] grid-cols-2 gap-3">
+          <div className="grid h-[calc(90vh-132px)] grid-cols-1 gap-3 sm:grid-cols-2">
             <section className="overflow-hidden rounded-md border" style={{ borderColor: 'var(--border)' }}>
               <header className="border-b px-3 py-2 text-xs" style={{ borderColor: 'var(--border)', color: 'var(--muted)' }}>
                 Your code
